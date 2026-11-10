@@ -299,7 +299,7 @@ impl Render for AppView {
 						.gap_2()
 						.text_xs()
 						.text_color(tokens::fg_dim())
-						.child(div().size_3p5().rounded_sm().bg(tokens::red()))
+						.child(img(crate::ui::assets::LOGO).size(px(16.)))
 						.child(rust_i18n::t!("app.name")),
 				)
 				.when(logged_in, |bar| {

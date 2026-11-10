@@ -6,6 +6,9 @@ fn main() {
 		let mut resources = winresource::WindowsResource::new();
 		// Resource id 1: Explorer, the taskbar and GPUI's window icon all use it.
 		resources.set_icon("assets/icon.ico");
+		// Name shown by Task Manager and the taskbar.
+		resources.set("FileDescription", "TIDAL");
+		resources.set("ProductName", "TIDAL");
 		resources
 			.compile()
 			.expect("failed to compile the Windows resources");

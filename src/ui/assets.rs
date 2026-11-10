@@ -11,11 +11,19 @@ gpui_kit::assets::icon_assets!(
 	]
 );
 
+/// Asset path of the app logo.
+pub const LOGO: &str = "images/logo.png";
+
 /// Component icons plus the extra Lucide icons the app uses.
 pub struct AppAssets;
 
 impl AssetSource for AppAssets {
 	fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
+		if path == LOGO {
+			return Ok(Some(Cow::Borrowed(include_bytes!(
+				"../../assets/logo-64.png"
+			))));
+		}
 		if let Some(bytes) = ExtraIcons.load(path)? {
 			return Ok(Some(bytes));
 		}
