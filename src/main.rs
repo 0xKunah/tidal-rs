@@ -66,6 +66,11 @@ fn main() {
 				window_bounds: Some(WindowBounds::Windowed(bounds)),
 				window_min_size: Some(size(px(1000.), px(640.))),
 				focus: !background,
+				// Native title: taskbar, Alt+Tab and the Windows volume mixer.
+				titlebar: Some(TitlebarOptions {
+					title: Some("TIDAL".into()),
+					..TitleBar::title_bar_options()
+				}),
 				..TitleBar::window_options()
 			};
 			if demo {

@@ -113,6 +113,7 @@ impl AppView {
 		];
 		let focus = cx.focus_handle();
 		window.focus(&focus, cx);
+		window.set_window_title(&rust_i18n::t!("app.name"));
 		#[cfg(windows)]
 		{
 			use raw_window_handle::{HasWindowHandle as _, RawWindowHandle};
