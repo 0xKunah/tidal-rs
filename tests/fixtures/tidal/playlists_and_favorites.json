@@ -1,0 +1,35 @@
+{
+	"limit": 100,
+	"offset": 0,
+	"totalNumberOfItems": 2,
+	"items": [
+		{
+			"type": "USER_CREATED",
+			"created": "2026-03-12T10:00:00.000+0000",
+			"playlist": {
+				"uuid": "aaaa-1111",
+				"title": "Night Drive",
+				"numberOfTracks": 42,
+				"duration": 10260,
+				"image": "img-a",
+				"squareImage": "sq-a",
+				"type": "USER",
+				"creator": { "id": 42 }
+			}
+		},
+		{
+			"type": "USER_FAVORITE",
+			"created": "2026-04-02T10:00:00.000+0000",
+			"playlist": {
+				"uuid": "bbbb-2222",
+				"title": "Editorial Synthwave",
+				"numberOfTracks": 77,
+				"duration": 18000,
+				"image": "img-b",
+				"squareImage": null,
+				"type": "EDITORIAL",
+				"creator": { "id": 0 }
+			}
+		}
+	]
+}

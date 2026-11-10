@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Test
+        run: cargo test
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Build installer
+        shell: bash
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | python -c "import json,sys; print(json.load(sys.stdin)['packages'][0]['version'])")
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+          choco install innosetup -y --no-progress
+          "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" //DAppVersion="${version}" installer/tidal-rs.iss
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${VERSION}-build.${{ github.run_number }}"
+          gh release create "$tag" target/installer/tidal-rs-setup.exe target/release/tidal-rs.exe             --title "tidal-rs ${VERSION} (build ${{ github.run_number }})"             --generate-notes             --target "${{ github.sha }}"

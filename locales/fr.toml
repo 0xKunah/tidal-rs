@@ -1,0 +1,127 @@
+[app]
+name = "tidal-rs"
+
+[sidebar]
+search = "Rechercher"
+recent = "Écoutés récemment"
+playlists = "Playlists"
+new_playlist = "Nouvelle playlist"
+settings = "Paramètres"
+
+[page]
+playlist = "Playlist"
+album = "Album"
+artist = "Artiste"
+play = "Lecture"
+shuffle = "Aléatoire"
+track_count = "%{count} titres"
+empty_title = "Aucune playlist pour l'instant"
+empty_action = "Créer une playlist"
+popular = "Titres populaires"
+albums = "Albums"
+singles = "Singles et EP"
+rename = "Renommer"
+delete = "Supprimer"
+delete_confirm = "Supprimer la playlist \"%{name}\" ?"
+cancel = "Annuler"
+create = "Créer"
+save = "Enregistrer"
+name = "Nom"
+loading = "Chargement..."
+load_failed = "Impossible de charger cette page."
+
+[table]
+title = "Titre"
+album = "Album"
+added = "Ajouté le"
+duration = "Durée"
+
+[queue]
+title = "File d'attente"
+now_playing = "En cours"
+added_by_you = "Ajoutés par toi"
+clear = "Vider"
+next_context = "Ensuite, %{name}"
+next_context_shuffled = "Ensuite, %{name} (aléatoire)"
+next_suggestions = "Ensuite, suggestions d'après %{name}"
+recent_context = "écoutés récemment"
+empty = "Rien dans la file"
+
+[menu]
+add_to_queue = "Ajouter à la file"
+add_to_playlist = "Ajouter à la playlist"
+filter_playlists = "Filtrer les playlists"
+already_in = "déjà dedans"
+new_playlist = "Nouvelle playlist"
+go_to_album = "Aller à l'album"
+go_to_artist = "Aller à l'artiste"
+copy_link = "Copier le lien"
+remove_from_playlist = "Retirer de cette playlist"
+remove_from_queue = "Retirer de la file"
+
+[player]
+shuffle = "Aléatoire"
+previous = "Précédent"
+play = "Lecture"
+pause = "Pause"
+next = "Suivant"
+repeat = "Répéter"
+queue = "File d'attente"
+volume = "Volume"
+
+[search]
+tracks = "Titres"
+artists = "Artistes"
+albums = "Albums"
+no_results = "Aucun résultat"
+placeholder = "Rechercher un titre, un artiste, un album"
+
+[recent]
+title = "Écoutés récemment"
+empty = "Les titres écoutés en dehors de tes playlists apparaissent ici."
+
+[settings]
+title = "Paramètres"
+language = "Langue"
+language_system = "Système"
+language_fr = "Français"
+language_en = "English"
+quality = "Qualité audio"
+quality_max = "Max"
+quality_lossless = "Lossless"
+quality_high = "Haute"
+quality_max_unsupported = "Max n'est pas encore pris en charge, Lossless est utilisé à la place."
+account = "Compte"
+logout = "Se déconnecter"
+
+[login]
+title = "Connecte ton compte TIDAL"
+instructions = "Ouvre le lien ci-dessous et saisis ce code."
+open = "Ouvrir link.tidal.com"
+copy = "Copier le code"
+waiting = "En attente de confirmation..."
+missing_client = "Identifiants client manquants : %{path}"
+failed = "Échec de la connexion : %{error}"
+bad_redirect = "Ce n'est pas l'adresse de la page \"Oops\". Copie toute la barre d'adresse après la connexion."
+pkce_step1 = "1. Ouvre la page de connexion TIDAL et connecte-toi."
+pkce_step2 = "2. Tu arrives sur une page \"Oops\" : copie toute l'adresse de la barre d'adresse."
+pkce_step3 = "3. Colle-la ci-dessous, puis Connecter."
+open_pkce = "Ouvrir la page de connexion TIDAL"
+paste_placeholder = "Colle l'adresse de la page \"Oops\""
+connect = "Connecter"
+retry = "Réessayer"
+
+[toast]
+unavailable = "Titre indisponible, ignoré"
+network = "Erreur réseau, nouvelle tentative..."
+added_to_playlist = "Ajouté à %{name}"
+link_copied = "Lien copié"
+edit_failed = "Impossible de modifier la playlist"
+
+[sort]
+custom = "Ordre personnalisé"
+title = "Titre"
+artist = "Artiste"
+album = "Album"
+added = "Date d'ajout"
+duration = "Durée"

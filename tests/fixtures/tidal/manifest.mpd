@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" profiles="urn:mpeg:dash:profile:isoff-main:2011" type="static" minBufferTime="PT3.993S" mediaPresentationDuration="PT0H3M30.000S">
+	<Period id="0">
+		<AdaptationSet id="0" contentType="audio" mimeType="audio/mp4" segmentAlignment="true">
+			<Representation id="FLAC,96000,24" codecs="flac" bandwidth="2304000" audioSamplingRate="96000">
+				<SegmentTemplate timescale="96000" initialization="https://x/init.mp4?a=1&amp;b=2" media="https://x/$Number$.mp4?a=1&amp;b=2" startNumber="1">
+					<SegmentTimeline>
+						<S d="176128" r="2"/>
+						<S d="100000"/>
+					</SegmentTimeline>
+				</SegmentTemplate>
+			</Representation>
+		</AdaptationSet>
+	</Period>
+</MPD>

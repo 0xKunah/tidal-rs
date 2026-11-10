@@ -1,0 +1,17 @@
+{
+	"id": 77646168,
+	"title": "Nightcall",
+	"version": null,
+	"duration": 258,
+	"trackNumber": 1,
+	"volumeNumber": 1,
+	"explicit": false,
+	"audioQuality": "LOSSLESS",
+	"allowStreaming": true,
+	"streamReady": true,
+	"artists": [
+		{ "id": 3586, "name": "Kavinsky", "type": "MAIN" },
+		{ "id": 9999, "name": "Lovefoxxx", "type": "FEATURED" }
+	],
+	"album": { "id": 77646164, "title": "OutRun", "cover": "6b3c-aaaa-bbbb" }
+}
