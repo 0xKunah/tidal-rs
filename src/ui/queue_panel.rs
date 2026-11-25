@@ -90,6 +90,12 @@ fn queue_row(
 	state: &Entity<AppState>,
 ) -> impl IntoElement + use<> {
 	let group: SharedString = "queue-row".into();
+	let play_command = if now {
+		Command::TogglePlay
+	} else {
+		Command::PlaySingle(target.item.clone())
+	};
+	let play_state = state.clone();
 	let title_color = if now {
 		rgb(0xfca5a5).into()
 	} else {
@@ -128,6 +134,21 @@ fn queue_row(
 		.when(now, |row| {
 			row.child(widgets::icon(IconName::AudioLines, 14., tokens::red()))
 		})
+		.child(
+			div()
+				.invisible()
+				.group_hover(group.clone(), |style| style.visible())
+				.child(widgets::icon_button(
+					"queue-row-play",
+					IconName::Play,
+					14.,
+					false,
+					move |_, _, cx| {
+						let command = play_command.clone();
+						play_state.update(cx, |state, cx| state.dispatch(command, cx));
+					},
+				)),
+		)
 		.when(drag.is_some(), |row| {
 			row.child(
 				div()

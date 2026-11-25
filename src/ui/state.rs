@@ -114,6 +114,8 @@ pub struct AppState {
 	/// Last single-clicked track; `Q` queues it.
 	pub selected: Option<QueueItem>,
 	pub search: SearchState,
+	/// Text typed in the playlist page search box.
+	pub playlist_filter: String,
 	/// Scroll state of the virtualized tables, by table id.
 	list_states: std::cell::RefCell<HashMap<&'static str, ListState>>,
 	search_timer: Option<Task<()>>,
@@ -201,6 +203,7 @@ impl AppState {
 			toasts: Vec::new(),
 			selected: None,
 			search: SearchState::default(),
+			playlist_filter: String::new(),
 			list_states: Default::default(),
 			search_timer: None,
 			state_path,
@@ -790,6 +793,7 @@ impl AppState {
 			Route::Search | Route::Settings => {}
 		}
 		if self.route.as_ref() != Some(&route) {
+			self.playlist_filter.clear();
 			for list in self.list_states.borrow().values() {
 				list.scroll_to(ListOffset {
 					item_ix: 0,
@@ -812,6 +816,13 @@ impl AppState {
 			state.reset(count);
 		}
 		state.clone()
+	}
+
+	pub fn set_playlist_filter(&mut self, query: &str, cx: &mut Context<Self>) {
+		if self.playlist_filter != query {
+			self.playlist_filter = query.to_string();
+			cx.notify();
+		}
 	}
 
 	pub fn playlist(&self, id: &PlaylistId) -> Option<&Playlist> {

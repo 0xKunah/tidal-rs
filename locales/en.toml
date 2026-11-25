@@ -10,6 +10,7 @@ settings = "Settings"
 
 [page]
 playlist = "Playlist"
+filter = "Search in playlist"
 album = "Album"
 artist = "Artist"
 play = "Play"

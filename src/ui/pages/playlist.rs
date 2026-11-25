@@ -5,12 +5,13 @@ use std::rc::Rc;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::input::{Input, InputState};
 use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 
 use crate::model::{ContextRef, Playlist, PlaylistId, Track};
-use crate::sort::{SortKey, TrackSort, sorted_indices};
+use crate::sort::{SortKey, TrackSort, filter_indices, sorted_indices};
 use crate::ui::state::{AppState, COVER_LARGE, COVER_SMALL, Remote};
 use crate::ui::track_table::{PageHeader, PlayAs, TableOptions, track_table};
 use crate::ui::{dialogs, format, tokens, widgets};
@@ -259,7 +260,12 @@ fn more_menu(state: &Entity<AppState>, playlist: &Playlist) -> impl IntoElement 
 		})
 }
 
-pub fn playlist_page(state: &Entity<AppState>, id: &PlaylistId, cx: &App) -> AnyElement {
+pub fn playlist_page(
+	state: &Entity<AppState>,
+	filter: &Entity<InputState>,
+	id: &PlaylistId,
+	cx: &App,
+) -> AnyElement {
 	let app = state.read(cx);
 	let Some(playlist) = app.playlist(id).cloned() else {
 		return message(rust_i18n::t!("page.loading")).into_any_element();
@@ -296,13 +302,15 @@ pub fn playlist_page(state: &Entity<AppState>, id: &PlaylistId, cx: &App) -> Any
 			.child(message(status))
 			.into_any_element();
 	};
-	let order = sorted_indices(tracks, sort);
+	let query = app.playlist_filter.clone();
+	let order = filter_indices(tracks, sorted_indices(tracks, sort), &query);
 	let tracks: Vec<Track> = order.iter().map(|&ix| tracks[ix].clone()).collect();
 	let page: PageHeader = {
 		let state = state.clone();
 		let kind = kind.clone();
 		let tracks = tracks.clone();
 		let playlist = playlist.clone();
+		let filter = filter.clone();
 		Rc::new(move |_, cx: &mut App| {
 			v_flex()
 				.w_full()
@@ -315,6 +323,11 @@ pub fn playlist_page(state: &Entity<AppState>, id: &PlaylistId, cx: &App) -> Any
 				.child(
 					play_actions(&state, kind.clone(), tracks.clone(), cx)
 						.child(sort_menu(&state, &playlist.id, sort))
+						.child(div().w(px(240.)).child(
+							Input::new(&filter)
+								.prefix(widgets::icon(IconName::Search, 14., tokens::fg_dim()))
+								.cleanable(true),
+						))
 						.when(playlist.owned, |actions| {
 							actions.child(more_menu(&state, &playlist))
 						}),
@@ -332,7 +345,7 @@ pub fn playlist_page(state: &Entity<AppState>, id: &PlaylistId, cx: &App) -> Any
 				show_added: true,
 				owned_playlist: owned,
 				source_index: Some(Rc::new(order)),
-				reorderable: playlist.owned && sort.key == SortKey::Custom,
+				reorderable: playlist.owned && sort.key == SortKey::Custom && query.is_empty(),
 				sort: Some((playlist.id.clone(), sort)),
 			},
 			tracks,

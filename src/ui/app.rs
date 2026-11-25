@@ -11,6 +11,7 @@ use crate::model::Route;
 use crate::player::Command;
 use crate::ui::pages::{album, artist, login, playlist, recent, search, settings};
 use crate::ui::player_bar::PlayerSliders;
+use crate::ui::smooth_scroll::SmoothScroll;
 use crate::ui::state::AppState;
 use crate::ui::{player_bar, queue_panel, sidebar, tokens, widgets};
 
@@ -19,21 +20,24 @@ gpui_kit::actions!(tidal_rs, [TogglePlay, FocusSearch, QueueSelected]);
 /// Space, Ctrl K and Q. Space and Q only apply outside text inputs.
 pub fn key_bindings() -> Vec<KeyBinding> {
 	vec![
-		KeyBinding::new("space", TogglePlay, Some("AppView")),
+		KeyBinding::new("space", TogglePlay, Some("AppView && !Input")),
 		KeyBinding::new("ctrl-k", FocusSearch, None),
-		KeyBinding::new("q", QueueSelected, Some("AppView")),
+		KeyBinding::new("q", QueueSelected, Some("AppView && !Input")),
 	]
 }
 
 pub struct AppView {
 	state: Entity<AppState>,
 	search: Entity<InputState>,
+	/// Filter box of the playlist page.
+	playlist_filter: Entity<InputState>,
 	/// Paste field of the browser (PKCE) login.
 	pkce_input: Entity<InputState>,
 	sliders: PlayerSliders,
 	/// Locale the input placeholders were last set in.
 	placeholder_locale: String,
 	focus: FocusHandle,
+	smooth_scroll: SmoothScroll,
 	_subscriptions: Vec<Subscription>,
 }
 
@@ -52,6 +56,9 @@ impl AppView {
 		});
 		let seek_state = state.clone();
 		let search_state = state.clone();
+		let playlist_filter = cx
+			.new(|cx| InputState::new(window, cx).placeholder(rust_i18n::t!("page.filter")));
+		let filter_state = state.clone();
 		let pkce_input = cx.new(|cx| {
 			InputState::new(window, cx).placeholder(rust_i18n::t!("login.paste_placeholder"))
 		});
@@ -69,6 +76,16 @@ impl AppView {
 				},
 			),
 			cx.subscribe_in(
+				&playlist_filter,
+				window,
+				move |_, input, event: &InputEvent, _, cx| {
+					if matches!(event, InputEvent::Change) {
+						let query = input.read(cx).value().to_string();
+						filter_state.update(cx, |state, cx| state.set_playlist_filter(&query, cx));
+					}
+				},
+			),
+			cx.subscribe_in(
 				&search,
 				window,
 				move |_, input, event: &InputEvent, _, cx| {
@@ -80,6 +97,7 @@ impl AppView {
 			),
 			cx.observe_in(&state, window, |this, _, window, cx| {
 				this.sync_sliders(window, cx);
+				this.sync_filter(window, cx);
 				this.sync_placeholders(window, cx);
 				cx.notify();
 			}),
@@ -127,6 +145,7 @@ impl AppView {
 		Self {
 			state,
 			search,
+			playlist_filter,
 			pkce_input: pkce_input.clone(),
 			placeholder_locale: rust_i18n::locale().to_string(),
 			sliders: PlayerSliders {
@@ -135,7 +154,18 @@ impl AppView {
 				seeking: None,
 			},
 			focus,
+			smooth_scroll: SmoothScroll::default(),
 			_subscriptions: subscriptions,
+		}
+	}
+
+	/// Empties the filter box when the state dropped its text (page change).
+	fn sync_filter(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+		if self.state.read(cx).playlist_filter.is_empty()
+			&& !self.playlist_filter.read(cx).value().is_empty()
+		{
+			self.playlist_filter
+				.update(cx, |input, cx| input.set_value("", window, cx));
 		}
 	}
 
@@ -148,6 +178,9 @@ impl AppView {
 		self.placeholder_locale = locale;
 		self.search.update(cx, |input, cx| {
 			input.set_placeholder(rust_i18n::t!("sidebar.search"), window, cx)
+		});
+		self.playlist_filter.update(cx, |input, cx| {
+			input.set_placeholder(rust_i18n::t!("page.filter"), window, cx)
 		});
 		self.pkce_input.update(cx, |input, cx| {
 			input.set_placeholder(rust_i18n::t!("login.paste_placeholder"), window, cx)
@@ -200,7 +233,7 @@ impl AppView {
 	fn page(&self, cx: &App) -> AnyElement {
 		let route = self.state.read(cx).route.clone();
 		match route {
-			Some(Route::Playlist(id)) => playlist::playlist_page(&self.state, &id, cx),
+			Some(Route::Playlist(id)) => playlist::playlist_page(&self.state, &self.playlist_filter, &id, cx),
 			Some(Route::Album(id)) => album::album_page(&self.state, id, cx),
 			Some(Route::Artist(id)) => artist::artist_page(&self.state, id, cx),
 			Some(Route::Search) => search::search_page(&self.state, cx),
@@ -374,5 +407,6 @@ impl Render for AppView {
 			.child(title)
 			.child(body)
 			.child(self.toasts(cx))
+			.child(self.smooth_scroll.listener())
 	}
 }

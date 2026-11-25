@@ -6,6 +6,7 @@ pub mod pages;
 pub mod player_bar;
 pub mod queue_panel;
 pub mod sidebar;
+pub mod smooth_scroll;
 pub mod state;
 pub mod theme;
 pub mod tokens;

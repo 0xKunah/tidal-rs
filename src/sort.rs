@@ -78,6 +78,27 @@ pub fn sorted_indices(tracks: &[Track], sort: TrackSort) -> Vec<usize> {
 	indices
 }
 
+/// Keeps the indices whose track matches `query` (title, artist or album, ignoring case).
+pub fn filter_indices(tracks: &[Track], indices: Vec<usize>, query: &str) -> Vec<usize> {
+	let query = query.trim().to_lowercase();
+	if query.is_empty() {
+		return indices;
+	}
+	indices
+		.into_iter()
+		.filter(|&ix| {
+			let track = &tracks[ix];
+			[
+				track.title.as_str(),
+				track.artist_names().as_str(),
+				track.album.title.as_str(),
+			]
+			.iter()
+			.any(|field| field.to_lowercase().contains(&query))
+		})
+		.collect()
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -111,6 +132,17 @@ mod tests {
 
 	fn by(key: SortKey, descending: bool) -> TrackSort {
 		TrackSort { key, descending }
+	}
+
+	#[test]
+	fn filter_matches_title_artist_and_album_ignoring_case() {
+		let tracks = tracks();
+		let all: Vec<usize> = (0..tracks.len()).collect();
+		assert_eq!(filter_indices(&tracks, all.clone(), "ALPHA"), vec![1]);
+		assert_eq!(filter_indices(&tracks, all.clone(), " abba "), vec![2]);
+		assert_eq!(filter_indices(&tracks, all.clone(), "album 9"), vec![0]);
+		assert_eq!(filter_indices(&tracks, all.clone(), ""), all);
+		assert!(filter_indices(&tracks, all, "zzz").is_empty());
 	}
 
 	#[test]
