@@ -47,6 +47,8 @@ pub enum Command {
 		to: usize,
 	},
 	Next,
+	/// Same as pressing Next `n` times, but loads only the track it lands on.
+	SkipAhead(usize),
 	Previous,
 	TogglePlay,
 	Seek(Duration),
@@ -219,6 +221,14 @@ impl Player {
 				vec![]
 			}
 			Command::Next => self.next(true),
+			Command::SkipAhead(count) => {
+				self.history.clear_forward();
+				let mut effects = vec![];
+				for _ in 0..count {
+					effects = self.next(true);
+				}
+				effects
+			}
 			Command::Previous => self.previous(),
 			Command::TogglePlay => {
 				if self.now.is_none() {
@@ -630,6 +640,21 @@ mod tests {
 			seen.push(now(&p));
 		}
 		assert_eq!(seen, vec![10, 11, 2]);
+	}
+
+	#[test]
+	fn skip_ahead_lands_on_the_track_like_repeated_nexts() {
+		let mut p = Player::new(1);
+		play(&mut p, &[1, 2, 3, 4, 5], 0);
+		p.handle(Command::AddToQueue(other(10)));
+		p.handle(Command::AddToQueue(other(11)));
+		// Queue: 10, 11, then the list 2, 3, 4, 5. Jump to 3.
+		let fx = p.handle(Command::SkipAhead(4));
+		assert_eq!(loads(&fx), vec![3]);
+		assert_eq!(now(&p), 3);
+		assert!(p.view().user_queue.is_empty());
+		assert_eq!(upcoming_ids(&p), vec![4, 5]);
+		assert_eq!(p.view().context, Some(ContextRef::Recent));
 	}
 
 	#[test]

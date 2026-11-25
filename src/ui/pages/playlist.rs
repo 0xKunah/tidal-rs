@@ -323,11 +323,17 @@ pub fn playlist_page(
 				.child(
 					play_actions(&state, kind.clone(), tracks.clone(), cx)
 						.child(sort_menu(&state, &playlist.id, sort))
-						.child(div().w(px(240.)).child(
-							Input::new(&filter)
-								.prefix(widgets::icon(IconName::Search, 14., tokens::fg_dim()))
-								.cleanable(true),
-						))
+						.child(
+							div()
+								.w(px(240.))
+								// The page refocuses the app on click; keep the focus in the input.
+								.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+								.child(
+									Input::new(&filter)
+										.prefix(widgets::icon(IconName::Search, 14., tokens::fg_dim()))
+										.cleanable(true),
+								),
+						)
 						.when(playlist.owned, |actions| {
 							actions.child(more_menu(&state, &playlist))
 						}),

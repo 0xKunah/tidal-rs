@@ -86,15 +86,11 @@ fn queue_row(
 	cover: Option<std::path::PathBuf>,
 	now: bool,
 	drag: Option<DraggedQueueRow>,
+	play_command: Command,
 	target: MenuTarget,
 	state: &Entity<AppState>,
 ) -> impl IntoElement + use<> {
 	let group: SharedString = "queue-row".into();
-	let play_command = if now {
-		Command::TogglePlay
-	} else {
-		Command::PlaySingle(target.item.clone())
-	};
 	let play_state = state.clone();
 	let title_color = if now {
 		rgb(0xfca5a5).into()
@@ -199,6 +195,7 @@ pub fn queue_panel(state: &Entity<AppState>, cx: &App) -> impl IntoElement {
 		.map(ContextRef::origin)
 		.unwrap_or(Origin::Other);
 	let cover = |track: &Track| app.cover(track.album.cover.as_deref(), COVER_SMALL);
+	let user_queued = view.user_queue.len();
 	let close_state = state.clone();
 	let clear_state = state.clone();
 
@@ -219,6 +216,7 @@ pub fn queue_panel(state: &Entity<AppState>, cx: &App) -> impl IntoElement {
 				cover(&now.track),
 				true,
 				None,
+				Command::TogglePlay,
 				MenuTarget {
 					item: now.clone(),
 					owned_row: None,
@@ -256,6 +254,7 @@ pub fn queue_panel(state: &Entity<AppState>, cx: &App) -> impl IntoElement {
 						from: ix,
 						title: item.track.title.clone().into(),
 					}),
+					Command::SkipAhead(ix + 1),
 					MenuTarget {
 						item: item.clone(),
 						owned_row: None,
@@ -289,6 +288,7 @@ pub fn queue_panel(state: &Entity<AppState>, cx: &App) -> impl IntoElement {
 							from: ix,
 							title: track.title.clone().into(),
 						}),
+						Command::SkipAhead(user_queued + ix + 1),
 						MenuTarget {
 							item: QueueItem {
 								track: track.clone(),
