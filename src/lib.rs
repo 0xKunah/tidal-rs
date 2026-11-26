@@ -5,6 +5,7 @@ pub mod backend;
 pub mod controller;
 pub mod demo;
 pub mod i18n;
+pub mod lyrics;
 pub mod model;
 pub mod os;
 pub mod player;

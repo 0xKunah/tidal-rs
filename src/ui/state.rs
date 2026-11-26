@@ -14,6 +14,7 @@ use crate::controller::{
 	ErrorPolicy, Generations, LoadDebouncer, PendingLoad, audio_error_policy, playback_error_policy,
 };
 use crate::i18n::{self, Lang};
+use crate::lyrics::{LyricsCache, LyricsState, clamp_seek};
 use crate::model::AudioQuality;
 use crate::model::TrackId;
 use crate::model::{
@@ -101,6 +102,9 @@ pub struct AppState {
 	pub route: Option<Route>,
 	pub last_playlist: Option<PlaylistId>,
 	pub queue_panel_open: bool,
+	/// Full-page lyrics view shown instead of the page.
+	pub lyrics_open: bool,
+	lyrics: LyricsCache,
 	pub playlist_sorts: HashMap<PlaylistId, TrackSort>,
 	pub playlists: Remote<Vec<Playlist>>,
 	pub playlist_tracks: HashMap<PlaylistId, Remote<Vec<Track>>>,
@@ -192,6 +196,8 @@ impl AppState {
 			route: snapshot.route,
 			last_playlist: snapshot.last_playlist,
 			queue_panel_open: snapshot.queue_panel_open,
+			lyrics_open: false,
+			lyrics: LyricsCache::new(),
 			playlist_sorts: snapshot.playlist_sorts,
 			playlists: Remote::Loading,
 			playlist_tracks: HashMap::new(),
@@ -428,6 +434,26 @@ impl AppState {
 		);
 	}
 
+	pub fn lyrics_state(&self, id: TrackId) -> LyricsState {
+		self.lyrics.get(id)
+	}
+
+	/// Opens or closes the lyrics view; does nothing while no track is loaded.
+	pub fn toggle_lyrics(&mut self, cx: &mut Context<Self>) {
+		if self.player.view().now.is_none() {
+			return;
+		}
+		self.lyrics_open = !self.lyrics_open;
+		cx.notify();
+	}
+
+	pub fn seek_to(&mut self, position: Duration, cx: &mut Context<Self>) {
+		if let Some(now) = self.player.view().now {
+			let position = clamp_seek(position, now.track.duration);
+			self.dispatch(Command::Seek(position), cx);
+		}
+	}
+
 	pub fn play_single(&mut self, item: QueueItem, cx: &mut Context<Self>) {
 		self.dispatch(Command::PlaySingle(item), cx);
 	}
@@ -443,6 +469,9 @@ impl AppState {
 					self.audio.send(AudioCmd::Stop);
 					self.badge = None;
 					self.want_cover(track.album.cover.as_deref(), COVER_SMALL);
+					if self.lyrics.should_request(track.id) {
+						self.send(Request::Lyrics(track.id));
+					}
 					self.debouncer.request(
 						PendingLoad {
 							track,
@@ -658,6 +687,7 @@ impl AppState {
 				self.dispatch(Command::SuggestionsLoaded { seed, tracks }, cx);
 			}
 			Response::Suggestions(_, Err(_)) => {}
+			Response::Lyrics(id, result) => self.lyrics.set(id, result.ok().flatten()),
 			Response::Stream { generation, result } => {
 				if !self.generations.is_current(generation) {
 					return;

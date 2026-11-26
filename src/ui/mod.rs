@@ -2,6 +2,7 @@ pub mod app;
 pub mod assets;
 pub mod dialogs;
 pub mod format;
+pub mod lyrics_view;
 pub mod pages;
 pub mod player_bar;
 pub mod queue_panel;

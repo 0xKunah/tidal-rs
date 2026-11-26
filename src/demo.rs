@@ -4,6 +4,7 @@
 use std::time::Duration;
 
 use crate::backend::{Backend, Request, Response, handle};
+use crate::lyrics::Lyrics;
 use crate::model::{
 	Album, AlbumId, AlbumRef, Artist, ArtistId, ArtistPage, ArtistRef, AudioQuality, Playlist,
 	PlaylistId, SearchResults, Track, TrackId,
@@ -127,6 +128,13 @@ impl TidalApi for DemoApi {
 	}
 	async fn track_radio(&self, id: TrackId) -> TidalResult<Vec<Track>> {
 		Ok(tracks(id.0 * 3 + 300, 10))
+	}
+	async fn lyrics(&self, id: TrackId) -> TidalResult<Option<Lyrics>> {
+		if id.0 % 2 == 1 {
+			return Ok(None);
+		}
+		let text = "[00:00.00] Driving through the night\n[00:04.00] City lights on the glass\n[00:08.00] Nothing left to say\n[00:12.00] We let the engine sing";
+		Ok(Lyrics::from_parts(None, Some(text)))
 	}
 	async fn stream(&self, _id: TrackId, _quality: AudioQuality) -> TidalResult<StreamInfo> {
 		Err(TidalError::Network("demo mode has no audio".into()))

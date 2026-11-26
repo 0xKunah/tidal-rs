@@ -7,14 +7,15 @@ use futures::StreamExt as _;
 use reqwest::{Method, RequestBuilder, Response, StatusCode};
 use serde::de::DeserializeOwned;
 
+use crate::lyrics::Lyrics;
 use crate::model::{
 	Album, AlbumId, ArtistId, ArtistPage, AudioQuality, Playlist, PlaylistId, SearchResults, Track,
 	TrackId,
 };
 use crate::tidal::auth::{Auth, TokenStore, Tokens, api_error};
 use crate::tidal::dto::{
-	AlbumDto, ArtistDto, FavoritePlaylistDto, Page, PlaybackInfoDto, PlaylistDto, PlaylistItemDto,
-	SearchDto, SessionDto, TrackDto,
+	AlbumDto, ArtistDto, FavoritePlaylistDto, LyricsDto, Page, PlaybackInfoDto, PlaylistDto,
+	PlaylistItemDto, SearchDto, SessionDto, TrackDto,
 };
 use crate::tidal::manifest::{StreamInfo, decode_manifest, quality_from_api};
 use crate::tidal::{Endpoints, TidalApi, TidalError, TidalResult};
@@ -296,6 +297,17 @@ impl TidalApi for HttpTidal {
 			.get(&format!("tracks/{}/radio", id.0), &[("limit", "50".into())])
 			.await?;
 		Ok(page.items.into_iter().map(Into::into).collect())
+	}
+
+	async fn lyrics(&self, id: TrackId) -> TidalResult<Option<Lyrics>> {
+		match self
+			.get::<LyricsDto>(&format!("tracks/{}/lyrics", id.0), &[])
+			.await
+		{
+			Ok(dto) => Ok(Lyrics::from_parts(dto.lyrics, dto.subtitles.as_deref())),
+			Err(TidalError::NotFound) => Ok(None),
+			Err(error) => Err(error),
+		}
 	}
 
 	async fn stream(&self, id: TrackId, quality: AudioQuality) -> TidalResult<StreamInfo> {
@@ -619,6 +631,32 @@ mod tests {
 			tracks.iter().map(|t| t.id.0).collect::<Vec<_>>(),
 			vec![6, 7]
 		);
+	}
+
+	#[tokio::test]
+	async fn lyrics_parses_synced_and_plain() {
+		let server = MockServer::start().await;
+		let api = connected(&server).await;
+		mount_json(
+			&server,
+			"/v1/tracks/5/lyrics",
+			serde_json::json!({
+				"trackId": 5,
+				"lyrics": "hello\nworld",
+				"subtitles": "[00:01.00] hello\n[00:02.00] world"
+			}),
+		)
+		.await;
+		let lyrics = api.lyrics(TrackId(5)).await.unwrap().unwrap();
+		assert_eq!(lyrics.synced.len(), 2);
+		assert_eq!(lyrics.plain.as_deref(), Some("hello\nworld"));
+	}
+
+	#[tokio::test]
+	async fn lyrics_missing_is_none() {
+		let server = MockServer::start().await;
+		let api = connected(&server).await;
+		assert_eq!(api.lyrics(TrackId(9)).await.unwrap(), None);
 	}
 
 	#[tokio::test]

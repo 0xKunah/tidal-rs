@@ -4,8 +4,8 @@ use std::rc::Rc;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::input::{Input, InputState};
+use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
@@ -330,7 +330,11 @@ pub fn playlist_page(
 								.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
 								.child(
 									Input::new(&filter)
-										.prefix(widgets::icon(IconName::Search, 14., tokens::fg_dim()))
+										.prefix(widgets::icon(
+											IconName::Search,
+											14.,
+											tokens::fg_dim(),
+										))
 										.cleanable(true),
 								),
 						)

@@ -13,7 +13,7 @@ use crate::ui::pages::{album, artist, login, playlist, recent, search, settings}
 use crate::ui::player_bar::PlayerSliders;
 use crate::ui::smooth_scroll::SmoothScroll;
 use crate::ui::state::AppState;
-use crate::ui::{player_bar, queue_panel, sidebar, tokens, widgets};
+use crate::ui::{lyrics_view, player_bar, queue_panel, sidebar, tokens, widgets};
 
 gpui_kit::actions!(tidal_rs, [TogglePlay, FocusSearch, QueueSelected]);
 
@@ -38,6 +38,7 @@ pub struct AppView {
 	placeholder_locale: String,
 	focus: FocusHandle,
 	smooth_scroll: SmoothScroll,
+	lyrics_scroll: ScrollHandle,
 	_subscriptions: Vec<Subscription>,
 }
 
@@ -56,8 +57,8 @@ impl AppView {
 		});
 		let seek_state = state.clone();
 		let search_state = state.clone();
-		let playlist_filter = cx
-			.new(|cx| InputState::new(window, cx).placeholder(rust_i18n::t!("page.filter")));
+		let playlist_filter =
+			cx.new(|cx| InputState::new(window, cx).placeholder(rust_i18n::t!("page.filter")));
 		let filter_state = state.clone();
 		let pkce_input = cx.new(|cx| {
 			InputState::new(window, cx).placeholder(rust_i18n::t!("login.paste_placeholder"))
@@ -155,6 +156,7 @@ impl AppView {
 			},
 			focus,
 			smooth_scroll: SmoothScroll::default(),
+			lyrics_scroll: ScrollHandle::new(),
 			_subscriptions: subscriptions,
 		}
 	}
@@ -233,7 +235,9 @@ impl AppView {
 	fn page(&self, cx: &App) -> AnyElement {
 		let route = self.state.read(cx).route.clone();
 		match route {
-			Some(Route::Playlist(id)) => playlist::playlist_page(&self.state, &self.playlist_filter, &id, cx),
+			Some(Route::Playlist(id)) => {
+				playlist::playlist_page(&self.state, &self.playlist_filter, &id, cx)
+			}
 			Some(Route::Album(id)) => album::album_page(&self.state, id, cx),
 			Some(Route::Artist(id)) => artist::artist_page(&self.state, id, cx),
 			Some(Route::Search) => search::search_page(&self.state, cx),
@@ -322,6 +326,7 @@ impl Render for AppView {
 		let app = self.state.read(cx);
 		let logged_in = app.is_logged_in();
 		let queue_open = app.queue_panel_open;
+		let lyrics_open = app.lyrics_open && app.player.view().now.is_some();
 		let toggle_state = self.state.clone();
 		let title = TitleBar::new().child(
 			h_flex()
@@ -363,7 +368,17 @@ impl Render for AppView {
 			v_flex()
 				.flex_1()
 				.min_h_0()
-				.child(
+				.child(if lyrics_open {
+					div()
+						.flex_1()
+						.min_h_0()
+						.child(lyrics_view::lyrics_view(
+							&self.state,
+							&self.lyrics_scroll,
+							cx,
+						))
+						.into_any_element()
+				} else {
 					h_flex()
 						.flex_1()
 						.min_h_0()
@@ -379,8 +394,9 @@ impl Render for AppView {
 						)
 						.when(queue_open, |row| {
 							row.child(queue_panel::queue_panel(&self.state, cx))
-						}),
-				)
+						})
+						.into_any_element()
+				})
 				.child(
 					div()
 						.on_mouse_down(MouseButton::Left, refocus)

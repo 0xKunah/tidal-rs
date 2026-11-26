@@ -129,7 +129,9 @@ pub fn player_bar(state: &Entity<AppState>, sliders: &PlayerSliders, cx: &App) -
 	} else {
 		IconName::Repeat
 	};
+	// Occluded so clicks on controls do not reach the bar's lyrics toggle.
 	let controls = v_flex()
+		.occlude()
 		.items_center()
 		.gap(px(4.))
 		.child(
@@ -187,8 +189,11 @@ pub fn player_bar(state: &Entity<AppState>, sliders: &PlayerSliders, cx: &App) -
 	let toggle_state = state.clone();
 	let queue_open = app.queue_panel_open;
 	let mute_state = state.clone();
+	let lyrics_state = state.clone();
 	let volume = view.volume;
 	h_flex()
+		.id("player-bar")
+		.on_click(move |_, _, cx| lyrics_state.update(cx, |state, cx| state.toggle_lyrics(cx)))
 		.h(px(HEIGHT))
 		.w_full()
 		.flex_none()
@@ -215,33 +220,44 @@ pub fn player_bar(state: &Entity<AppState>, sliders: &PlayerSliders, cx: &App) -
 						.text_color(tokens::fg_muted())
 						.child(badge)
 				}))
-				.child(widgets::icon_button(
-					"queue-toggle",
-					IconName::ListMusic,
-					18.,
-					queue_open,
-					move |_, _, cx| {
-						toggle_state.update(cx, |state, cx| {
-							state.queue_panel_open = !state.queue_panel_open;
-							cx.notify();
-						})
-					},
-				))
-				.child(widgets::icon_button(
-					"mute",
-					if volume == 0. {
-						IconName::VolumeX
-					} else {
-						IconName::Volume2
-					},
-					18.,
-					false,
-					move |_, _, cx| {
-						mute_state.update(cx, |state, cx| {
-							state.dispatch(Command::ToggleMute, cx);
-						})
-					},
-				))
-				.child(div().w(px(96.)).child(Slider::new(&sliders.volume))),
+				.child(
+					widgets::icon_button(
+						"queue-toggle",
+						IconName::ListMusic,
+						18.,
+						queue_open,
+						move |_, _, cx| {
+							toggle_state.update(cx, |state, cx| {
+								state.queue_panel_open = !state.queue_panel_open;
+								cx.notify();
+							})
+						},
+					)
+					.occlude(),
+				)
+				.child(
+					widgets::icon_button(
+						"mute",
+						if volume == 0. {
+							IconName::VolumeX
+						} else {
+							IconName::Volume2
+						},
+						18.,
+						false,
+						move |_, _, cx| {
+							mute_state.update(cx, |state, cx| {
+								state.dispatch(Command::ToggleMute, cx);
+							})
+						},
+					)
+					.occlude(),
+				)
+				.child(
+					div()
+						.occlude()
+						.w(px(96.))
+						.child(Slider::new(&sliders.volume)),
+				),
 		)
 }

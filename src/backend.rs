@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::lyrics::Lyrics;
 use crate::model::{
 	Album, AlbumId, ArtistId, ArtistPage, AudioQuality, Playlist, PlaylistId, SearchResults, Track,
 	TrackId, cover_url,
@@ -25,6 +26,7 @@ pub enum Request {
 	Artist(ArtistId),
 	Search(String),
 	Suggestions(Track),
+	Lyrics(TrackId),
 	Stream {
 		generation: u64,
 		track: TrackId,
@@ -77,6 +79,7 @@ pub enum Response {
 	Artist(ArtistId, Result<ArtistPage>),
 	Search(String, Result<SearchResults>),
 	Suggestions(TrackId, Result<Vec<Track>>),
+	Lyrics(TrackId, Result<Option<Lyrics>>),
 	Stream {
 		generation: u64,
 		result: Result<StreamInfo>,
@@ -128,6 +131,7 @@ pub async fn handle<A: TidalApi>(api: &A, request: Request) -> Vec<Response> {
 				api.track_radio(seed.id).await,
 			)]
 		}
+		Request::Lyrics(id) => vec![Response::Lyrics(id, api.lyrics(id).await)],
 		Request::Stream {
 			generation,
 			track,
@@ -509,6 +513,9 @@ mod tests {
 		async fn track_radio(&self, _id: TrackId) -> TidalResult<Vec<Track>> {
 			Ok(list(&[5, 6]))
 		}
+		async fn lyrics(&self, _id: TrackId) -> TidalResult<Option<Lyrics>> {
+			Ok(None)
+		}
 		async fn stream(&self, _id: TrackId, _quality: AudioQuality) -> TidalResult<StreamInfo> {
 			Err(TidalError::Unavailable)
 		}
@@ -547,6 +554,13 @@ mod tests {
 			matches!(&responses[..], [Response::Search(query, Ok(results))]
 			if query == "a" && results.tracks.len() == 1)
 		);
+	}
+
+	#[tokio::test]
+	async fn handle_routes_lyrics_with_the_track_id() {
+		let api = MockApi::default();
+		let responses = handle(&api, Request::Lyrics(TrackId(1))).await;
+		assert_eq!(responses, vec![Response::Lyrics(TrackId(1), Ok(None))]);
 	}
 
 	#[tokio::test]

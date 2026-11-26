@@ -10,6 +10,7 @@ use std::future::Future;
 
 use url::Url;
 
+use crate::lyrics::Lyrics;
 use crate::model::{
 	Album, AlbumId, ArtistId, ArtistPage, AudioQuality, Playlist, PlaylistId, SearchResults, Track,
 	TrackId,
@@ -76,6 +77,8 @@ pub trait TidalApi: Send + Sync + 'static {
 	fn artist(&self, id: ArtistId) -> impl Future<Output = TidalResult<ArtistPage>> + Send;
 	fn search(&self, query: &str) -> impl Future<Output = TidalResult<SearchResults>> + Send;
 	fn track_radio(&self, id: TrackId) -> impl Future<Output = TidalResult<Vec<Track>>> + Send;
+	/// None when TIDAL has no lyrics for the track.
+	fn lyrics(&self, id: TrackId) -> impl Future<Output = TidalResult<Option<Lyrics>>> + Send;
 	fn stream(
 		&self,
 		id: TrackId,

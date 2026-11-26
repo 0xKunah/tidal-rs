@@ -10,6 +10,15 @@ use crate::model::{
 };
 
 #[derive(Deserialize)]
+pub struct LyricsDto {
+	#[serde(default)]
+	pub lyrics: Option<String>,
+	/// Timed lines, LRC format.
+	#[serde(default)]
+	pub subtitles: Option<String>,
+}
+
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Page<T> {
 	#[serde(default = "Vec::new")]
