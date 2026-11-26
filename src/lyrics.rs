@@ -99,7 +99,11 @@ pub fn clamp_seek(position: Duration, duration: Duration) -> Duration {
 pub struct LyricsCache {
 	entries: HashMap<TrackId, Option<Lyrics>>,
 	requested: HashSet<TrackId>,
+	failures: HashMap<TrackId, u8>,
 }
+
+/// A failed request (network, token) is asked again this many times.
+const MAX_RETRIES: u8 = 2;
 
 impl LyricsCache {
 	pub fn new() -> Self {
@@ -114,6 +118,18 @@ impl LyricsCache {
 	pub fn set(&mut self, id: TrackId, lyrics: Option<Lyrics>) {
 		self.requested.insert(id);
 		self.entries.insert(id, lyrics);
+	}
+
+	/// Records a failed request. True when it should be sent again; after
+	/// `MAX_RETRIES` the track is given up on (`Missing`).
+	pub fn failed(&mut self, id: TrackId) -> bool {
+		let count = self.failures.entry(id).or_default();
+		if *count < MAX_RETRIES {
+			*count += 1;
+			return true;
+		}
+		self.set(id, None);
+		false
 	}
 
 	pub fn get(&self, id: TrackId) -> LyricsState {
@@ -198,6 +214,17 @@ mod tests {
 			clamp_seek(Duration::from_secs(10), Duration::from_secs(200)),
 			Duration::from_secs(10)
 		);
+	}
+
+	#[test]
+	fn failed_requests_are_retried_a_few_times_before_giving_up() {
+		let mut cache = LyricsCache::new();
+		assert!(cache.should_request(TrackId(1)));
+		assert!(cache.failed(TrackId(1)));
+		assert!(cache.failed(TrackId(1)));
+		assert_eq!(cache.get(TrackId(1)), LyricsState::Loading);
+		assert!(!cache.failed(TrackId(1)));
+		assert_eq!(cache.get(TrackId(1)), LyricsState::Missing);
 	}
 
 	#[test]

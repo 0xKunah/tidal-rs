@@ -144,19 +144,39 @@ fn synced(
 				.child(div().h(px(EDGE_SPACE)).flex_none()),
 		)
 		.child(
-			// Eases the scroll offset toward the active line, one step per frame.
+			// Eases the scroll offset toward the active line, one step per frame. The
+			// target comes from child heights only (they do not depend on the scroll
+			// position), so the animation cannot feed back on stale bounds.
 			canvas(
 				|_, _, _| (),
 				move |_, _, window, _| {
-					let Some(line) = target.and_then(|ix| follow.bounds_for_item(ix)) else {
+					let Some(target) = target else { return };
+					let mut top = 0.;
+					let mut total = 0.;
+					let mut line_height = None;
+					let mut ix = 0;
+					while let Some(bounds) = follow.bounds_for_item(ix) {
+						let height = f32::from(bounds.size.height);
+						if ix == target {
+							line_height = Some(height);
+						} else if ix < target {
+							top += height;
+						}
+						total += height;
+						ix += 1;
+					}
+					let Some(line_height) = line_height else {
 						return;
 					};
-					let delta = follow.bounds().center().y - line.center().y;
-					if delta.abs() < px(0.5) {
+					let viewport = f32::from(follow.bounds().size.height);
+					let wanted = (viewport / 2. - (top + line_height / 2.))
+						.clamp(-(total - viewport).max(0.), 0.);
+					let offset = follow.offset();
+					let current = f32::from(offset.y);
+					if (wanted - current).abs() < 0.5 {
 						return;
 					}
-					let offset = follow.offset();
-					follow.set_offset(point(offset.x, offset.y + delta * EASE));
+					follow.set_offset(point(offset.x, px(current + (wanted - current) * EASE)));
 					window.request_animation_frame();
 				},
 			)

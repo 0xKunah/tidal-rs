@@ -689,7 +689,12 @@ impl AppState {
 				self.dispatch(Command::SuggestionsLoaded { seed, tracks }, cx);
 			}
 			Response::Suggestions(_, Err(_)) => {}
-			Response::Lyrics(id, result) => self.lyrics.set(id, result.ok().flatten()),
+			Response::Lyrics(id, Ok(lyrics)) => self.lyrics.set(id, lyrics),
+			Response::Lyrics(id, Err(_)) => {
+				if self.lyrics.failed(id) {
+					self.send(Request::Lyrics(id));
+				}
+			}
 			Response::Stream { generation, result } => {
 				if !self.generations.is_current(generation) {
 					return;
