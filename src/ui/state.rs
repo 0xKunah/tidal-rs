@@ -469,6 +469,8 @@ impl AppState {
 					self.audio.send(AudioCmd::Stop);
 					self.badge = None;
 					self.want_cover(track.album.cover.as_deref(), COVER_SMALL);
+					// Shown large in the lyrics view.
+					self.want_cover(track.album.cover.as_deref(), COVER_LARGE);
 					if self.lyrics.should_request(track.id) {
 						self.send(Request::Lyrics(track.id));
 					}

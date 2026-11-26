@@ -5,7 +5,7 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 
 use crate::lyrics::{Lyrics, LyricsState};
-use crate::ui::state::{AppState, COVER_LARGE};
+use crate::ui::state::{AppState, COVER_LARGE, COVER_SMALL};
 use crate::ui::{tokens, widgets};
 
 const COVER_SIZE: f32 = 380.;
@@ -27,7 +27,9 @@ pub fn lyrics_view(state: &Entity<AppState>, scroll: &ScrollHandle, cx: &App) ->
 		LyricsState::Loading | LyricsState::Missing => None,
 	};
 	let Some(lyrics) = ready else {
-		let cover = app.cover(now.track.album.cover.as_deref(), COVER_LARGE);
+		let cover = app
+			.cover(now.track.album.cover.as_deref(), COVER_LARGE)
+			.or_else(|| app.cover(now.track.album.cover.as_deref(), COVER_SMALL));
 		return h_flex()
 			.size_full()
 			.items_center()
@@ -40,7 +42,9 @@ pub fn lyrics_view(state: &Entity<AppState>, scroll: &ScrollHandle, cx: &App) ->
 	} else {
 		synced(state, &lyrics, view.position, scroll)
 	};
-	let cover = app.cover(now.track.album.cover.as_deref(), COVER_LARGE);
+	let cover = app
+		.cover(now.track.album.cover.as_deref(), COVER_LARGE)
+		.or_else(|| app.cover(now.track.album.cover.as_deref(), COVER_SMALL));
 	h_flex()
 		.size_full()
 		.child(
@@ -99,6 +103,7 @@ fn synced(
 			let seek_state = state.clone();
 			div()
 				.id(("lyric-line", index))
+				.flex_none()
 				.w_full()
 				.max_w(px(900.))
 				.px(px(32.))
@@ -128,16 +133,15 @@ fn synced(
 			div()
 				.id("lyrics-synced")
 				.size_full()
+				.flex()
+				.flex_col()
+				.items_center()
 				.overflow_y_scroll()
 				.track_scroll(scroll)
-				.child(
-					v_flex()
-						.w_full()
-						.items_center()
-						.child(div().h(px(EDGE_SPACE)).flex_none())
-						.children(lines)
-						.child(div().h(px(EDGE_SPACE)).flex_none()),
-				),
+				// Lines must be direct children: the scroll handle indexes them.
+				.child(div().h(px(EDGE_SPACE)).flex_none())
+				.children(lines)
+				.child(div().h(px(EDGE_SPACE)).flex_none()),
 		)
 		.child(
 			// Eases the scroll offset toward the active line, one step per frame.
