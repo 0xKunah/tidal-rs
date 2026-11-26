@@ -11,7 +11,7 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 
 use crate::model::{ContextRef, Playlist, PlaylistId, Track};
-use crate::sort::{SortKey, TrackSort, filter_indices, sorted_indices};
+use crate::sort::{SortKey, TrackSort, filter_indices, filter_positions, sorted_indices};
 use crate::ui::state::{AppState, COVER_LARGE, COVER_SMALL, Remote};
 use crate::ui::track_table::{PageHeader, PlayAs, TableOptions, track_table};
 use crate::ui::{dialogs, format, tokens, widgets};
@@ -303,7 +303,14 @@ pub fn playlist_page(
 			.into_any_element();
 	};
 	let query = app.playlist_filter.clone();
-	let order = filter_indices(tracks, sorted_indices(tracks, sort), &query);
+	let sorted = sorted_indices(tracks, sort);
+	// While filtering, playing a row queues the whole playlist from that track.
+	let full_list = (!query.trim().is_empty()).then(|| {
+		let full: Vec<Track> = sorted.iter().map(|&ix| tracks[ix].clone()).collect();
+		let positions = filter_positions(tracks, &sorted, &query);
+		(Rc::new(full), Rc::new(positions))
+	});
+	let order = filter_indices(tracks, sorted, &query);
 	let tracks: Vec<Track> = order.iter().map(|&ix| tracks[ix].clone()).collect();
 	let page: PageHeader = {
 		let state = state.clone();
@@ -355,6 +362,7 @@ pub fn playlist_page(
 				show_added: true,
 				owned_playlist: owned,
 				source_index: Some(Rc::new(order)),
+				full_list,
 				reorderable: playlist.owned && sort.key == SortKey::Custom && query.is_empty(),
 				sort: Some((playlist.id.clone(), sort)),
 			},

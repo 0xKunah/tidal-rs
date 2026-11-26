@@ -91,6 +91,7 @@ pub fn artist_page(state: &Entity<AppState>, id: ArtistId, cx: &App) -> AnyEleme
 					show_added: false,
 					owned_playlist: None,
 					source_index: None,
+					full_list: None,
 					reorderable: false,
 					sort: None,
 				},

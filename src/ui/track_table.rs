@@ -37,6 +37,9 @@ pub struct TableOptions {
 	pub owned_playlist: Option<PlaylistId>,
 	/// Position of each displayed row in the playlist when the view is sorted.
 	pub source_index: Option<Rc<Vec<usize>>>,
+	/// Filtered playlist: the whole playlist, in display order, and each row's place in it.
+	/// Playing a row then queues the full playlist instead of only the matches.
+	pub full_list: Option<(Rc<Vec<Track>>, Rc<Vec<usize>>)>,
 	/// Rows can be dragged to reorder the playlist (owned and unsorted).
 	pub reorderable: bool,
 	/// Playlist pages: clicking a column title sorts by it.
@@ -152,12 +155,17 @@ fn interactive_row(
 		let state = state.clone();
 		let tracks = tracks.clone();
 		let play_as = options.play_as.clone();
+		let full_list = options.full_list.clone();
 		Rc::new(move |cx: &mut App| {
 			let tracks = tracks.clone();
 			let play_as = play_as.clone();
+			let (queue, start) = match &full_list {
+				Some((full, positions)) => (full.clone(), positions[ix]),
+				None => (tracks.clone(), ix),
+			};
 			state.update(cx, |state, cx| match play_as {
 				PlayAs::List(kind) => {
-					state.play_list(kind, tracks.as_ref().clone(), Some(ix), None, cx)
+					state.play_list(kind, queue.as_ref().clone(), Some(start), None, cx)
 				}
 				PlayAs::Single => state.play_single(
 					QueueItem {

@@ -68,6 +68,7 @@ pub fn album_page(state: &Entity<AppState>, id: AlbumId, cx: &App) -> AnyElement
 				show_added: false,
 				owned_playlist: None,
 				source_index: None,
+				full_list: None,
 				reorderable: false,
 				sort: None,
 			},

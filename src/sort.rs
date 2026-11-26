@@ -78,6 +78,16 @@ pub fn sorted_indices(tracks: &[Track], sort: TrackSort) -> Vec<usize> {
 	indices
 }
 
+fn matches_query(track: &Track, query: &str) -> bool {
+	[
+		track.title.as_str(),
+		track.artist_names().as_str(),
+		track.album.title.as_str(),
+	]
+	.iter()
+	.any(|field| field.to_lowercase().contains(query))
+}
+
 /// Keeps the indices whose track matches `query` (title, artist or album, ignoring case).
 pub fn filter_indices(tracks: &[Track], indices: Vec<usize>, query: &str) -> Vec<usize> {
 	let query = query.trim().to_lowercase();
@@ -86,16 +96,18 @@ pub fn filter_indices(tracks: &[Track], indices: Vec<usize>, query: &str) -> Vec
 	}
 	indices
 		.into_iter()
-		.filter(|&ix| {
-			let track = &tracks[ix];
-			[
-				track.title.as_str(),
-				track.artist_names().as_str(),
-				track.album.title.as_str(),
-			]
-			.iter()
-			.any(|field| field.to_lowercase().contains(&query))
-		})
+		.filter(|&ix| matches_query(&tracks[ix], &query))
+		.collect()
+}
+
+/// Where each track kept by `filter_indices` sits in the unfiltered `indices`.
+pub fn filter_positions(tracks: &[Track], indices: &[usize], query: &str) -> Vec<usize> {
+	let query = query.trim().to_lowercase();
+	indices
+		.iter()
+		.enumerate()
+		.filter(|&(_, &ix)| query.is_empty() || matches_query(&tracks[ix], &query))
+		.map(|(position, _)| position)
 		.collect()
 }
 
@@ -143,6 +155,15 @@ mod tests {
 		assert_eq!(filter_indices(&tracks, all.clone(), "album 9"), vec![0]);
 		assert_eq!(filter_indices(&tracks, all.clone(), ""), all);
 		assert!(filter_indices(&tracks, all, "zzz").is_empty());
+	}
+
+	#[test]
+	fn filter_positions_point_into_the_unfiltered_order() {
+		let tracks = tracks();
+		let sorted = vec![2, 0, 1];
+		assert_eq!(filter_positions(&tracks, &sorted, "ALPHA"), vec![2]);
+		assert_eq!(filter_positions(&tracks, &sorted, ""), vec![0, 1, 2]);
+		assert!(filter_positions(&tracks, &sorted, "zzz").is_empty());
 	}
 
 	#[test]
